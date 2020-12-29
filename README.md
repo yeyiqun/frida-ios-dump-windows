@@ -1,6 +1,10 @@
-**Notice!** If you are a Windows user, `dump.py` in this repo may work better. If not, I suggest [AloneMonkey/frida-ios-dump](https://github.com/AloneMonkey/frida-ios-dump).
+**Notice!** If the original script (at [AloneMonkey/frida-ios-dump](https://github.com/AloneMonkey/frida-ios-dump)) doesn't work correctly and you are a Windows user, `dump.py` in this repo may work better. If you are a Linux/macOS user or just don't know which one to use, just use the original one.
 
 Work here haven't been done yet. Now, you have to look at `%temp%\Payload` (e.g. C:\Users\\*YourUsername*\AppData\Local\Temp\Payload) to get decrypted `Payload` files.
+
+**注意！** 这个仓库里的脚本仅建议Windows用户在 [AloneMonkey/frida-ios-dump](https://github.com/AloneMonkey/frida-ios-dump) 中的原版脚本不能正常使用的时候进行尝试。如果你使用Linux/macOS，或者还没试过原版的脚本，那么建议你去原仓库看看。
+
+这个脚本还没有完成。dump得到的文件会出现在 `%temp%\Payload` 目录(例如：C:\Users\\*YourUsername*\AppData\Local\Temp\Payload)，还请留意。
 
 # frida-ios-dump
 Pull a decrypted IPA from a jailbroken device
