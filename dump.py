@@ -34,13 +34,12 @@ DUMP_JS = os.path.join(script_dir, 'dump.js')
 
 User = 'root'
 Password = 'alpine'
-Host = '192.168.31.146'
+Host = '127.0.0.1'
 Port = 22
 KeyFileName = None
 
-TEMP_DIR = tempfile.gettempdir()
-PAYLOAD_DIR = 'Payload'
-PAYLOAD_PATH = os.path.join(TEMP_DIR, PAYLOAD_DIR)
+TEMP_PATH = tempfile.mkdtemp()
+PAYLOAD_PATH = os.path.join(TEMP_PATH, 'Payload')
 file_dict = {}
 
 finished = threading.Event()
@@ -85,13 +84,14 @@ def generate_ipa(path, display_name):
             if key != 'app':
                 shutil.move(from_dir, to_dir)
 
-        ipafile = os.path.join(os.getcwd(), ipa_filename)
-        target_dir = './' + PAYLOAD_DIR
-        shutil.make_archive(ipafile, 'zip', target_dir)
-                 #这里要改
-        # zip_args = ('zip', '-qr', os.path.join(os.getcwd(), ipa_filename), target_dir)
-        # subprocess.check_call(zip_args, cwd=TEMP_DIR)
-        # shutil.rmtree(PAYLOAD_PATH)
+        if os.path.exists(ipa_filename + '.zip'):
+            os.remove(ipa_filename + '.zip')
+        shutil.make_archive(ipa_filename, 'zip', root_dir=TEMP_PATH)
+        if os.path.exists(ipa_filename):
+            os.remove(ipa_filename)
+        os.rename(ipa_filename + '.zip', ipa_filename)
+
+        shutil.rmtree(TEMP_PATH)
     except Exception as e:
         print(e)
         finished.set()
@@ -117,17 +117,10 @@ def on_message(message, data):
             dump_path = payload['dump']
 
             scp_from = dump_path
-            scp_to = PAYLOAD_PATH + '/'
+            scp_to = PAYLOAD_PATH
 
             with SCPClient(ssh.get_transport(), progress = progress, socket_timeout = 60) as scp:
                 scp.get(scp_from, scp_to)
-
-            # chmod_dir = os.path.join(PAYLOAD_PATH, os.path.basename(dump_path))
-            # chmod_args = ('chmod', '655', chmod_dir)
-            # try:
-            #     subprocess.check_call(chmod_args)
-            # except subprocess.CalledProcessError as err:
-            #     print(err)
 
             index = origin_path.find('.app/')
             file_dict[os.path.basename(dump_path)] = origin_path[index + 5:]
@@ -136,16 +129,9 @@ def on_message(message, data):
             app_path = payload['app']
 
             scp_from = app_path
-            scp_to = PAYLOAD_PATH + '/'
+            scp_to = PAYLOAD_PATH
             with SCPClient(ssh.get_transport(), progress = progress, socket_timeout = 60) as scp:
                 scp.get(scp_from, scp_to, recursive=True)
-
-            # chmod_dir = os.path.join(PAYLOAD_PATH, os.path.basename(app_path))
-            # chmod_args = ('chmod', '755', chmod_dir)
-            # try:
-            #     subprocess.check_call(chmod_args)
-            # except subprocess.CalledProcessError as err:
-            #     print(err)
 
             file_dict['app'] = os.path.basename(app_path)
 
@@ -242,18 +228,6 @@ def load_js_file(session, filename):
     return script
 
 
-def create_dir(path):
-    path = path.strip()
-    path = path.rstrip('\\')
-    if os.path.exists(path):
-        pass
-        # shutil.rmtree(path)
-    try:
-        os.makedirs(path)
-    except os.error as err:
-        print(err)
-
-
 def open_target_app(device, name_or_bundleid):
     print('Start the target app {}'.format(name_or_bundleid))
 
@@ -281,8 +255,8 @@ def open_target_app(device, name_or_bundleid):
 
 
 def start_dump(session, ipa_name):
-    print('Dumping {} to {}'.format(display_name, TEMP_DIR))
-
+    print('Dumping {} to {}'.format(display_name, TEMP_PATH))
+    os.makedirs(PAYLOAD_PATH)
     script = load_js_file(session, DUMP_JS)
     script.post('dump')
     finished.wait()
@@ -337,11 +311,10 @@ if __name__ == '__main__':
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh.connect(Host, port=Port, username=User, password=Password, key_filename=KeyFileName)
 
-            create_dir(PAYLOAD_PATH)
             (session, display_name, bundle_identifier) = open_target_app(device, name_or_bundleid)
             if output_ipa is None:
                 output_ipa = display_name
-            output_ipa = re.sub('\.ipa$', '', output_ipa)
+            output_ipa = re.sub(r'\.ipa$', '', output_ipa)
             if session:
                 start_dump(session, output_ipa)
         except paramiko.ssh_exception.NoValidConnectionsError as e:
@@ -359,9 +332,5 @@ if __name__ == '__main__':
 
     if ssh:
         ssh.close()
-
-    if os.path.exists(PAYLOAD_PATH):
-        # shutil.rmtree(PAYLOAD_PATH)
-        pass
-
+        
     sys.exit(exit_code)
