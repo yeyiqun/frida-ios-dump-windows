@@ -6,6 +6,8 @@ Due to inconvenience of using `usbmuxd` on Windows, I suggest SSH after connecti
 
 **注意！** 这个仓库里的脚本仅建议Windows用户在 [AloneMonkey/frida-ios-dump](https://github.com/AloneMonkey/frida-ios-dump) 中的原版脚本不能正常使用的时候进行尝试。如果你使用Linux/macOS，或者还没试过原版的脚本，那么建议你去原仓库看看。
 
+处理了windows上最后生成ipa时，移动文件权限不对出错的问题
+
 由于Windows不便使用`usbmuxd`进行端口转发，建议连USB后直接SSH到设备。用法：
 
 ```commandline
