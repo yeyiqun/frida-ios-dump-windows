@@ -81,6 +81,8 @@ def generate_ipa(path, display_name):
         for key, value in file_dict.items():
             from_dir = os.path.join(path, key)
             to_dir = os.path.join(path, app_name, value)
+            if os.path.exists(from_dir):
+                os.chmod(from_dir, 0o777)
             if key != 'app':
                 shutil.move(from_dir, to_dir)
 
